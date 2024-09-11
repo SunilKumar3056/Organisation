@@ -2,13 +2,18 @@ package com.organisation.organisation.service.impl;
 
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
+import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import com.organisation.organisation.models.FileResponse;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,18 +27,48 @@ public class FileStorage {
 
     // Store file in MongoDB
     public String storeFile(MultipartFile file) throws IOException {
-        InputStream inputStream = file.getInputStream();
-        GridFSUploadOptions options = new GridFSUploadOptions()
-                .chunkSizeBytes(1024)
-                .metadata(null);  // Add metadata if needed
+        InputStream inputStream = new ByteArrayInputStream(file.getBytes());
 
-        ObjectId fileId = gridFsTemplate.store(inputStream, file.getOriginalFilename(), file.getContentType());
-        return fileId.toHexString();
+        // Get content type
+        String contentType = file.getContentType();
+
+        // Define upload options with content type metadata
+        GridFSUploadOptions options = new GridFSUploadOptions()
+                .metadata(new org.bson.Document("contentType", contentType));
+
+        // Upload file to GridFS
+        String fileId = gridFSBucket.uploadFromStream(file.getOriginalFilename(), inputStream, options).toString();
+
+        return fileId;
     }
 
     // Retrieve file from MongoDB
-    public InputStream getFile(String fileId) throws IOException {
-        GridFSDownloadStream downloadStream = gridFSBucket.openDownloadStream(new ObjectId(fileId));
-        return downloadStream;
+    public FileResponse getFile(String fileId) throws IOException {
+        ObjectId objectId;
+        try {
+            objectId = new ObjectId(fileId);
+        } catch (IllegalArgumentException e) {
+            throw new IOException("Invalid file ID format", e);
+        }
+
+        GridFSFile gridFSFile = gridFSBucket.find(new Document("_id",objectId)).first();
+
+        if (gridFSFile == null) {
+            throw new IOException("File not found");
+        }
+
+        // Retrieve the content type from metadata
+        assert gridFSFile.getMetadata() != null;
+        String contentType = gridFSFile.getMetadata().getString("contentType");
+
+        GridFSDownloadStream downloadStream = gridFSBucket.openDownloadStream(gridFSFile.getObjectId());
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        int data;
+        while ((data = downloadStream.read()) != -1) {
+            outputStream.write(data);
+        }
+        downloadStream.close();
+
+        return new FileResponse(outputStream.toByteArray(), contentType);
     }
 }
