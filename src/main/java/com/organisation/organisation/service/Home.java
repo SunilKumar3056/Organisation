@@ -10,4 +10,5 @@ public interface Home {
     Students addStudent(Students student);
     List<Students> getStudent(int id);
     List<Students> getStudent(String name);
+    boolean deleteRecordByName(String name);
 }

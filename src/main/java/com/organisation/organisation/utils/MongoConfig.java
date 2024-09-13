@@ -8,6 +8,7 @@ import com.mongodb.client.gridfs.GridFSBuckets;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Configuration
 public class MongoConfig {
@@ -30,6 +31,11 @@ public class MongoConfig {
     @Bean
     public GridFSBucket gridFSBucket(MongoDatabase mongoDatabase) {
         return GridFSBuckets.create(mongoDatabase);
+    }
+
+    @Bean
+    public MongoTemplate mongoTemplate() {
+        return new MongoTemplate(MongoClients.create(dbUrl), dbName);
     }
 }
 //66e1d634617ef344ca692fb8

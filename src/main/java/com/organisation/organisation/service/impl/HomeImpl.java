@@ -1,17 +1,17 @@
 package com.organisation.organisation.service.impl;
 
+import ch.qos.logback.classic.util.LogbackMDCAdapter;
 import com.organisation.organisation.Dao.HomeDb;
 import com.organisation.organisation.models.Students;
 import com.organisation.organisation.service.Home;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class HomeImpl implements Home {
@@ -19,9 +19,14 @@ public class HomeImpl implements Home {
     private HomeDb homeDb;
 
     @Autowired
+    private MongoTemplate mongoTemplate;
+
+    @Autowired
     public HomeImpl(HomeDb db){
+
         this.homeDb=db;
     }
+
     @Override
     public List<Students> getStudentInfo(){
         logger.info("get all students from db");
@@ -39,9 +44,25 @@ public class HomeImpl implements Home {
         List<Students> students = this.homeDb.findByName(name);
         return students;
     }
+
+    @Override
+    public boolean deleteRecordByName(String name) {
+        List<Students> students = this.homeDb.findByName(name);
+        if(!students.isEmpty()){
+            Query query = new Query();
+            query.addCriteria(Criteria.where("name").is(name));
+            mongoTemplate.remove(query, "students");
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+
     @Override
     public Students addStudent(Students student) {
         // The save method will insert the student into MongoDB
         return homeDb.save(student);
     }
+
 }
