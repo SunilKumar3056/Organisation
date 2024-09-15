@@ -2,7 +2,9 @@ package com.organisation.organisation.contoller;
 
 
 import com.organisation.organisation.models.Students;
+import com.organisation.organisation.models.Teachers;
 import com.organisation.organisation.service.Home;
+import com.organisation.organisation.service.Teacher;
 import com.organisation.organisation.service.impl.HomeImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +18,14 @@ import java.util.List;
 @RestController
 public class HomePage {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
+
     private Home home;
+    private Teacher teacher;
 
     @Autowired
-    public HomePage(Home home) {
+    public HomePage(Home home, Teacher teacher) {
         this.home = home;
+        this.teacher=teacher;
     }
 
     @GetMapping("/student")
@@ -52,5 +57,14 @@ public class HomePage {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Record not found");
         }
+    }
+    @GetMapping("/teachers")
+    public ResponseEntity<List<Teachers>>getTeachersInfo(){
+        return ResponseEntity.ok(teacher.getTeachersInfo());
+    };
+
+    @PostMapping("/teachers")
+    public ResponseEntity<Teachers>addTeacherInfo(@RequestBody Teachers teachers){
+        return ResponseEntity.ok(teacher.addTeacher(teachers));
     }
 }

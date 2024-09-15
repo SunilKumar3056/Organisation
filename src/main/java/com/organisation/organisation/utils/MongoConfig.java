@@ -38,4 +38,3 @@ public class MongoConfig {
         return new MongoTemplate(MongoClients.create(dbUrl), dbName);
     }
 }
-//66e1d634617ef344ca692fb8

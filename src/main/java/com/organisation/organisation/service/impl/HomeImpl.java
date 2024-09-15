@@ -23,7 +23,6 @@ public class HomeImpl implements Home {
 
     @Autowired
     public HomeImpl(HomeDb db){
-
         this.homeDb=db;
     }
 
